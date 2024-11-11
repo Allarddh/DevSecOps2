@@ -1,0 +1,95 @@
+---
+- name: Install Gitea via Binaries
+  hosts: localhost
+  connection: local
+  become: yes
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - git
+          - wget
+          - nano
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Download Gitea binary
+      get_url:
+        url: https://dl.gitea.io/gitea/1.20.6/gitea-1.20.6-linux-amd64
+        dest: /usr/local/bin/gitea
+        mode: '0755'
+
+    - name: Create git user
+      user:
+        name: git
+        system: yes
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Create Gitea directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: git
+        group: git
+        mode: '0750'
+      loop:
+        - /var/lib/gitea/custom
+        - /var/lib/gitea/data
+        - /var/lib/gitea/log
+
+    - name: Set permissions for /var/lib/gitea
+      file:
+        path: /var/lib/gitea
+        state: directory
+        owner: git
+        group: git
+        mode: '0750'
+        recurse: yes
+
+    - name: Create /etc/gitea directory
+      file:
+        path: /etc/gitea
+        state: directory
+        owner: root
+        group: git
+        mode: '0750'
+
+    - name: Set permissions for /etc/gitea
+      file:
+        path: /etc/gitea
+        mode: '0750'
+
+    - name: Plaats het app.ini configuratiebestand
+      copy:
+        src: ./app.ini
+        dest: /etc/gitea/app.ini
+        owner: git
+        mode: '0644'
+
+    - name: Maak Gitea Systemd service aan
+      copy:
+        content: |
+          [Unit]
+          Description=Gitea
+          After=network.target
+
+          [Service]
+          User=git
+          Group=git
+          WorkingDirectory=/var/lib/gitea/
+          ExecStart=/usr/local/bin/gitea web -c /etc/gitea/app.ini
+          Restart=always
+          Environment=USER=git HOME=/var/lib/gitea/
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/gitea.service
+        mode: '0644'
+
+    - name: Start en enable Gitea service
+      systemd:
+        name: gitea
+        enabled: yes
+        state: started
