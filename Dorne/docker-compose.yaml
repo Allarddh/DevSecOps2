@@ -1,0 +1,33 @@
+version: '3'
+services:
+  drone:
+    image: drone/drone:2
+    container_name: drone
+    restart: always
+    volumes:
+      - /var/lib/drone:/data
+    environment:
+      - DRONE_GITEA_SERVER=http://100.113.237.113:3000
+      - DRONE_GITEA_CLIENT_ID=6782e85a-0d0d-4155-9cca-d8b367665f93
+      - DRONE_GITEA_CLIENT_SECRET=gto_hvgckpypxpwdzugjwmeytyktuzy6sitobmjowufhbhs5hqciwh3a
+      - DRONE_RPC_SECRET=49335ded2a598522262210e460d6bf5f
+      - DRONE_SERVER_HOST=100.74.51.119
+      - DRONE_SERVER_PROTO=http
+      - DRONE_LOGS_DEBUG=true
+    ports:
+      - "80:80"
+      - "443:443"
+
+  drone-runner:
+    image: drone/drone-runner-docker:1
+    container_name: drone-runner
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_HOST=drone:80
+      - DRONE_RPC_SECRET=49335ded2a598522262210e460d6bf5f
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=runner
+      - DRONE_LOGS_DEBUG=true
