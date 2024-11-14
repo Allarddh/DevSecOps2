@@ -1,0 +1,26 @@
+kind: pipeline
+type: docker
+name: build-and-deploy
+
+steps:
+- name: build
+  image: plugins/docker
+  settings:
+    repo: dralladh/kuma
+    username: dralladh
+    password: Biscuitje123
+    tags:
+      - latest
+      - "${DRONE_BUILD_NUMBER}"
+#https://github.com/appleboy/drone-ssh
+- name: deploy
+  image: ghcr.io/appleboy/drone-ssh
+  settings:
+    host: 10.24.43.53
+    username: ubuntu
+    password: Biscuitje
+    port: 22
+    script:
+      - cd /home/ubuntu/app
+      - sudo docker-compose pull
+      - sudo docker-compose up -d
